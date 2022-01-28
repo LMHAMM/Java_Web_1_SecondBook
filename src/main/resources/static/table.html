@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<html lang="en">
+<head>
+    <title>后台页面</title>
+    <link rel="stylesheet" href="layui/css/layui.css"  media="all">
+    <script type="text/javascript" src="/js/productDetail.js"></script>
+    <script type="text/javascript" src="/js/jquery-1.8.3.min.js"></script>
+    <script src="js/layui/layui.all.js"></script>
+    <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+</head>
+<body>
+
+
+<!---->
+<!--<form class="layui-form" action="/product/DeleteBook" method="post">-->
+<!---->
+<table class="layui-hide" id="test" lay-filter="test"></table>
+
+<script type="text/html" id="toolbarDemo">
+
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm" lay-event="getCheckData">获取选中行数据</button>
+        <button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>
+        <button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button>
+    </div>
+
+</script>
+
+<script type="text/html" id="barDemo">
+    <a class="layui-btn layui-btn-xs" lay-event="detail" >编辑</a>
+    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+</script>
+
+
+<script src="layui/layui.js" charset="utf-8"></script>
+<!-- 注意：如果你直接复制所有代码到本地，上述 JS 路径需要改成你本地的 -->
+
+<script>
+    layui.use('table', function(){
+        var table = layui.table;
+
+        //温馨提示：默认由前端自动合计当前行数据。从 layui 2.5.6 开始： 若接口直接返回了合计行数据，则优先读取接口合计行数据。
+        //详见：https://www.layui.com/doc/modules/table.html#totalRow
+        table.render({
+            elem: '#test'
+            ,url:'/datalist'
+            ,toolbar: '#toolbarDemo'
+            ,title: '书库表'
+            ,totalRow: true
+            ,cols: [
+                [
+                {type: 'checkbox', fixed: 'left'}
+                ,{field:'id', title:'ID', width:100, fixed: 'left', unresize: true, sort: true, totalRowText: '合计'}
+                ,{field:'name', title:'书籍名', width:130}
+                ,{field:'description', title:'书籍描述', width:200}
+                ,{field:'price', title:'价格', width:95, sort: true, sort:true}
+                ,{field:'stock', title:'库存', width:95, sort: true, sort:true}
+                ,{field:'categorylevelone', title:'一级名称', width:150}
+                ,{field:'categoryleveltwo', title:'二级名称', width:150}
+                ,{field:'categorylevelthree', title:'三级名称', width:150}
+				,{fixed:'right', title:'操作', toolbar:'#barDemo', width:170}
+            ]
+            ]
+            ,page: true
+        });
+
+        //工具栏事件
+        table.on('toolbar(test)', function(obj){
+            var checkStatus = table.checkStatus(obj.config.id);
+
+            switch(obj.event){
+                case 'getCheckData':
+                    var data = checkStatus.data;
+                    layer.alert(JSON.stringify(data));
+                    break;
+                case 'getCheckLength':
+                    var data = checkStatus.data;
+                    layer.msg('选中了：'+ data.length + ' 个');
+                    break;
+                case 'isAll':
+                    layer.msg(checkStatus.isAll ? '全选': '未全选')
+                    break;
+
+            };
+        });
+
+
+		  //监听工具条,这里直接跟table的lay-filter属性绑定的
+		table.on('tool(test)', function(obj){
+
+            // layer.close(index);
+            // layer.msg('演示完毕！您的口令：'+ pass +'<br>您最后写下了：'+text);
+
+            if(obj.event === 'detail'){
+                var data = obj.data;
+                var data1 = [];
+                layer.prompt({title: '修改书籍描述，填写完成后并确认', formType: 2}, function(description, index){
+                    layer.close(index);
+                    layer.prompt({title: '修改书籍价格，填写完成并确认', formType: 2}, function(price, index){
+                        layer.close(index);
+                        layer.prompt({title: '修改书籍库存，填写完成并确认', formType: 2}, function(stock, index){
+                            layer.close(index);
+                            data1.push(data.id);
+                            data1.push(description);
+                            data1.push(price);
+                            data1.push(stock);
+                            $.ajax({
+                                url:'/product/EditBook',
+                                data:{id:data1[0],description:data1[1],price:data1[2],stock:data1[3]},
+                                method:'get',
+                                contentType:'application/json',
+                                success:function (){
+                                    layer.close(index);
+                                    table.reload();
+                                }
+                            })
+                        });
+                    });
+                });
+		    } else if(obj.event === 'del'){
+                var data = obj.data;
+                layer.confirm('真的删除行么', function(index){
+                    $.ajax({
+                        url:'/product/DeleteBook',
+                        data:{id:data.id},
+                        method:'get',
+                        contentType:'application/json',
+                        success:function (){
+                            obj.del();
+                            layer.close(index);
+                            table.reload();
+                        }
+                    })
+
+                });
+            }
+		  });
+		
+		
+    });
+</script>
+<!---->
+<!--</form>-->
+<!---->
+</body>
+
+</html>
